@@ -35,7 +35,7 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM)
 
 	c := cron.New()
-	// process the mini data daily
+	// process the mini data on the provided schedule
 	cID, err := c.AddFunc(schedule, processMiniData)
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
