@@ -17,4 +17,8 @@ func TestGetAll(t *testing.T) {
 		t.Error("data.Entry had no items...")
 		t.FailNow()
 	}
+
+	for _, entry := range data.Entry {
+		t.Log(entry.ID)
+	}
 }

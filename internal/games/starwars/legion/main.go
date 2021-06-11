@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	gameName = "Star Wars Legion"
-	repoName = "star-wars-legion"
+	GameName = "Star Wars Legion"
+	RepoName = "star-wars-legion"
 )
 
 // LoadData loads data for Star Wars Legion
-func LoadData() ([]games.Mini, error) {
-	logrus.Infof("Loading %s data", gameName)
+func LoadData(tag string) ([]games.Mini, error) {
+	logrus.Infof("Loading %s data", GameName)
 
 	var minis []games.Mini
 
-	cats, err := bsdata.GetData(repoName)
+	cats, err := bsdata.GetData(RepoName, tag)
 	if err != nil {
 		return minis, err
 	}
@@ -35,7 +35,7 @@ func LoadData() ([]games.Mini, error) {
 				minis = append(minis, games.Mini{
 					Name: fmt.Sprintf("%s - %s", cat.Name, e.Name),
 					Game: games.Game{
-						Name: gameName,
+						Name: GameName,
 					},
 				})
 			}

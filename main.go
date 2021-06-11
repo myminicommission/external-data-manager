@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"reflect"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/myminicommission/external-data-manager/internal/bsdata/feed"
 	"github.com/myminicommission/external-data-manager/internal/games"
 	"github.com/myminicommission/external-data-manager/internal/games/starwars/legion"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/wh40k"
@@ -17,10 +20,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type DataLoader struct {
+	Name string
+	Fn   func(string) ([]games.Mini, error)
+}
+
 var (
 	running  = false
 	schedule = "@daily"
+	feedData *feed.Feed
 )
+
+// data loaders
+func dataLoaders() []DataLoader {
+	return []DataLoader{
+		{Name: legion.RepoName, Fn: legion.LoadData},
+		{Name: wh40k.RepoName, Fn: wh40k.LoadData},
+	}
+}
 
 func main() {
 	logrus.Info("Starting up")
@@ -66,21 +83,31 @@ func main() {
 func processMiniData() {
 	if !running {
 		running = true
-		// data loaders to be called
-		dataFuncs := []func() ([]games.Mini, error){
-			legion.LoadData,
-			wh40k.LoadData,
+
+		// load feed data
+		if feedData == nil {
+			f, err := feed.GetAll()
+			if err != nil {
+				logrus.Fatal("could not load feed data", err)
+			}
+
+			feedData = &f
 		}
 
-		for _, fn := range dataFuncs {
+		for _, loader := range dataLoaders() {
 			// capture the function name for logging
-			fnLog := newFnLog(fn)
+			fnLog := newFnLog(&loader)
 
 			fnLog.Info("Executing LoadData")
 
-			minis, err := fn()
+			tag, err := latestTag(loader.Name)
 			if err != nil {
-				panic(err)
+				fnLog.Fatal("could not get latest tag", err)
+			}
+
+			minis, err := loader.Fn(tag)
+			if err != nil {
+				fnLog.Fatal("failed to execute data loder", err)
 			}
 
 			for _, mini := range minis {
@@ -90,18 +117,21 @@ func processMiniData() {
 			fnLog.Info("LoadData complete")
 		}
 
+		// clear feed data
+		feedData = nil
+
 		running = false
 	} else {
 		logrus.Warn("processMiniData already running...")
 	}
 }
 
-func newFnLog(fn func() ([]games.Mini, error)) *logrus.Entry {
-	return logrus.WithField(
+func newFnLog(loader *DataLoader) *logrus.Entry {
+	return logrus.WithField("loaderName", loader.Name).WithField(
 		"func",
 		strings.ReplaceAll(
 			runtime.FuncForPC(
-				reflect.ValueOf(fn).Pointer(),
+				reflect.ValueOf(loader.Fn).Pointer(),
 			).Name(),
 			"github.com/myminicommission/external-data-manager/internal/games/",
 			"",
@@ -141,4 +171,24 @@ func handleMini(mini games.Mini) {
 			}).Error("error while calling UpdateMini", err)
 		}
 	}
+}
+
+func latestTag(repo string) (string, error) {
+	if feedData == nil {
+		return "", errors.New("feedData is nil")
+	}
+
+	tag := "0"
+	replaceStr := fmt.Sprintf("https://github.com/BSData/%s/releases/tag/", repo)
+
+	for _, entry := range feedData.Entry {
+		if strings.Contains(entry.ID, fmt.Sprintf("BSData/%s/", repo)) {
+			t := strings.Replace(entry.ID, replaceStr, "", 1)
+			if t > tag {
+				tag = t
+			}
+		}
+	}
+
+	return tag, nil
 }
