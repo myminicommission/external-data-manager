@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"os/signal"
 	"reflect"
@@ -17,6 +15,7 @@ import (
 	"github.com/myminicommission/external-data-manager/internal/games/starwars/legion"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/wh40k"
 	"github.com/myminicommission/external-data-manager/internal/mmc"
+	"github.com/myminicommission/external-data-manager/internal/repo/tag"
 	"github.com/sirupsen/logrus"
 )
 
@@ -100,7 +99,7 @@ func processMiniData() {
 
 			fnLog.Info("Executing LoadData")
 
-			tag, err := latestTag(loader.Name)
+			tag, err := tag.Latest(loader.Name, feedData)
 			if err != nil {
 				fnLog.Fatal("could not get latest tag", err)
 			}
@@ -171,24 +170,4 @@ func handleMini(mini games.Mini) {
 			}).Error("error while calling UpdateMini", err)
 		}
 	}
-}
-
-func latestTag(repo string) (string, error) {
-	if feedData == nil {
-		return "", errors.New("feedData is nil")
-	}
-
-	tag := "0"
-	replaceStr := fmt.Sprintf("https://github.com/BSData/%s/releases/tag/", repo)
-
-	for _, entry := range feedData.Entry {
-		if strings.Contains(entry.ID, fmt.Sprintf("BSData/%s/", repo)) {
-			t := strings.Replace(entry.ID, replaceStr, "", 1)
-			if t > tag {
-				tag = t
-			}
-		}
-	}
-
-	return tag, nil
 }
