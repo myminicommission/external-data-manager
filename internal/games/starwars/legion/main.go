@@ -31,7 +31,7 @@ func LoadData(tag string) ([]games.Mini, error) {
 			e.Name = strings.ReplaceAll(e.Name, "†", "")
 			e.Name = strings.TrimSpace(e.Name)
 
-			if e.Hidden == "false" {
+			if e.Hidden == "false" && !strings.Contains(e.Name, " Cards") {
 				minis = append(minis, games.Mini{
 					Name: fmt.Sprintf("%s - %s", cat.Name, e.Name),
 					Game: games.Game{

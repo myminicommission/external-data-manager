@@ -1,4 +1,4 @@
-run:
+start:
 	go run . -- "@every 1m"
 
 test:

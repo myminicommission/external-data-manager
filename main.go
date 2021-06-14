@@ -17,25 +17,43 @@ import (
 	"github.com/myminicommission/external-data-manager/internal/mmc"
 	"github.com/myminicommission/external-data-manager/internal/repo/tag"
 	"github.com/sirupsen/logrus"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 type DataLoader struct {
 	Name string
+	Repo string
 	Fn   func(string) ([]games.Mini, error)
 }
 
 var (
-	running  = false
-	schedule = "@daily"
-	feedData *feed.Feed
+	running   = false
+	schedule  = "@daily"
+	feedData  *feed.Feed
+	mmcClient mmc.Client
+	gameList  []*games.Game
 )
 
 // data loaders
 func dataLoaders() []DataLoader {
 	return []DataLoader{
-		{Name: legion.RepoName, Fn: legion.LoadData},
-		{Name: wh40k.RepoName, Fn: wh40k.LoadData},
+		{Name: legion.GameName, Repo: legion.RepoName, Fn: legion.LoadData},
+		{Name: wh40k.GameName, Repo: wh40k.RepoName, Fn: wh40k.LoadData},
 	}
+}
+
+func init() {
+	// load the requisite env variables
+	url := os.Getenv("MMC_URL")
+	if url == "" {
+		// if nothing was set then default to the localhost env
+		url = "http://localhost:3001/query"
+	}
+	authToken := os.Getenv("MMC_AUTH_TOKEN") // the defaul value is blank
+
+	// setup the mmc client
+	mmcClient = mmc.NewClient(url, authToken)
 }
 
 func main() {
@@ -93,13 +111,34 @@ func processMiniData() {
 			feedData = &f
 		}
 
+		// load games data
+		if len(gameList) == 0 {
+			gList, err := mmcClient.ListGames()
+			if err != nil {
+				logrus.Fatal("could not load games list", err)
+			}
+			gameList = gList
+		}
+
 		for _, loader := range dataLoaders() {
 			// capture the function name for logging
 			fnLog := newFnLog(&loader)
 
 			fnLog.Info("Executing LoadData")
 
-			tag, err := tag.Latest(loader.Name, feedData)
+			// get the game, creating it if neccessary
+			game := getGame(loader.Name)
+			if game == nil || game.ID == mmc.BlankUUID {
+				fnLog.Info("game not found, creating")
+				g, err := mmcClient.CreateGame(loader.Name)
+				if err != nil {
+					fnLog.WithField("error", err).Fatal("could not create game")
+				}
+				game = g
+			}
+			fnLog.WithField("game", *game).Info("game loaded")
+
+			tag, err := tag.Latest(loader.Repo, feedData)
 			if err != nil {
 				fnLog.Fatal("could not get latest tag", err)
 			}
@@ -110,6 +149,7 @@ func processMiniData() {
 			}
 
 			for _, mini := range minis {
+				mini.Game = *game
 				handleMini(mini)
 			}
 
@@ -119,6 +159,9 @@ func processMiniData() {
 		// clear feed data
 		feedData = nil
 
+		// clear game data
+		gameList = nil
+
 		running = false
 	} else {
 		logrus.Warn("processMiniData already running...")
@@ -126,7 +169,7 @@ func processMiniData() {
 }
 
 func newFnLog(loader *DataLoader) *logrus.Entry {
-	return logrus.WithField("loaderName", loader.Name).WithField(
+	return logrus.WithField("loaderName", loader.Name).WithField("loaderRepo", loader.Repo).WithField(
 		"func",
 		strings.ReplaceAll(
 			runtime.FuncForPC(
@@ -146,28 +189,38 @@ func handleMini(mini games.Mini) {
 	log.Info("processing mini")
 
 	// get the existing mini
-	existingMini, err := mmc.GetMini(mini)
+	existingMini, err := mmcClient.GetMini(mini)
 	if err != nil {
-		log.Error("error while calling GetMini", err)
-	}
-	if err != nil {
-		log.Error("error while calling DoesMiniExist", err)
+		log.WithField("error", err).Error("error while calling GetMini")
+		return
 	}
 
 	// was a mini found?
 	if existingMini == nil {
 		// create the mini
-		err := mmc.CreateMini(mini)
+		err := mmcClient.CreateMini(mini)
 		if err != nil {
-			log.Error("error while calling CreateMini", err)
+			log.WithField("error", err).Error("error while calling CreateMini")
+			return
 		}
-	} else {
+	} /* else {
 		// update the mini
-		err = mmc.UpdateMini(existingMini.ID, mini)
+		err = mmcClient.UpdateMini(existingMini.ID, mini)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"existingMini": existingMini,
-			}).Error("error while calling UpdateMini", err)
+				"error":        err,
+			}).Error("error while calling UpdateMini")
+			return
+		}
+	}*/
+}
+
+func getGame(name string) *games.Game {
+	for _, game := range gameList {
+		if game.Name == name {
+			return game
 		}
 	}
+	return nil
 }
