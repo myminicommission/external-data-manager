@@ -12,6 +12,8 @@ import (
 
 	"github.com/myminicommission/external-data-manager/internal/bsdata/feed"
 	"github.com/myminicommission/external-data-manager/internal/games"
+	"github.com/myminicommission/external-data-manager/internal/games/boltaction"
+	soiaf "github.com/myminicommission/external-data-manager/internal/games/song-of-ice-and-fire"
 	"github.com/myminicommission/external-data-manager/internal/games/starwars/legion"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/wh40k"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/whaos"
@@ -42,6 +44,8 @@ func dataLoaders() []DataLoader {
 		{Name: legion.GameName, Repo: legion.RepoName, Fn: legion.LoadData},
 		{Name: wh40k.GameName, Repo: wh40k.RepoName, Fn: wh40k.LoadData},
 		{Name: whaos.GameName, Repo: whaos.RepoName, Fn: whaos.LoadData},
+		{Name: soiaf.GameName, Repo: soiaf.RepoName, Fn: soiaf.LoadData},
+		{Name: boltaction.GameName, Repo: boltaction.RepoName, Fn: boltaction.LoadData},
 	}
 }
 
