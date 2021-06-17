@@ -14,6 +14,7 @@ import (
 	"github.com/myminicommission/external-data-manager/internal/games"
 	"github.com/myminicommission/external-data-manager/internal/games/starwars/legion"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/wh40k"
+	"github.com/myminicommission/external-data-manager/internal/games/warhammer/whaos"
 	"github.com/myminicommission/external-data-manager/internal/mmc"
 	"github.com/myminicommission/external-data-manager/internal/repo/tag"
 	"github.com/sirupsen/logrus"
@@ -40,6 +41,7 @@ func dataLoaders() []DataLoader {
 	return []DataLoader{
 		{Name: legion.GameName, Repo: legion.RepoName, Fn: legion.LoadData},
 		{Name: wh40k.GameName, Repo: wh40k.RepoName, Fn: wh40k.LoadData},
+		{Name: whaos.GameName, Repo: whaos.RepoName, Fn: whaos.LoadData},
 	}
 }
 
