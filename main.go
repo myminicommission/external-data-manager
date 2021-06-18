@@ -12,8 +12,7 @@ import (
 
 	"github.com/myminicommission/external-data-manager/internal/bsdata/feed"
 	"github.com/myminicommission/external-data-manager/internal/games"
-	"github.com/myminicommission/external-data-manager/internal/games/boltaction"
-	soiaf "github.com/myminicommission/external-data-manager/internal/games/song-of-ice-and-fire"
+	"github.com/myminicommission/external-data-manager/internal/games/generic"
 	"github.com/myminicommission/external-data-manager/internal/games/starwars/legion"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/wh40k"
 	"github.com/myminicommission/external-data-manager/internal/games/warhammer/whaos"
@@ -25,9 +24,10 @@ import (
 )
 
 type DataLoader struct {
-	Name string
-	Repo string
-	Fn   func(string) ([]games.Mini, error)
+	Name   string
+	Repo   string
+	Fn     func(string) ([]games.Mini, error)
+	Custom bool
 }
 
 var (
@@ -40,13 +40,19 @@ var (
 
 // data loaders
 func dataLoaders() []DataLoader {
-	return []DataLoader{
+	loaders := []DataLoader{
 		{Name: legion.GameName, Repo: legion.RepoName, Fn: legion.LoadData},
 		{Name: wh40k.GameName, Repo: wh40k.RepoName, Fn: wh40k.LoadData},
 		{Name: whaos.GameName, Repo: whaos.RepoName, Fn: whaos.LoadData},
-		{Name: soiaf.GameName, Repo: soiaf.RepoName, Fn: soiaf.LoadData},
-		{Name: boltaction.GameName, Repo: boltaction.RepoName, Fn: boltaction.LoadData},
+		{Name: "Star Wars: X-Wing", Repo: "swxwing"},
+		{Name: "A Song of Ice and Fire", Repo: "song-of-ice-and-fire"},
+		{Name: "Boltaction", Repo: "boltaction"},
+		{Name: "Stargrave", Repo: "stargrave"},
+		{Name: "Battlefleet Gothic", Repo: "battlefleetgothic"},
+		{Name: "Marvel Crisis Protocol", Repo: "marvel-crisis-protocol"},
 	}
+
+	return loaders
 }
 
 func init() {
@@ -149,9 +155,17 @@ func processMiniData() {
 				fnLog.Fatal("could not get latest tag", err)
 			}
 
-			minis, err := loader.Fn(tag)
-			if err != nil {
-				fnLog.Fatal("failed to execute data loder", err)
+			var minis []games.Mini
+			if loader.Fn != nil {
+				minis, err = loader.Fn(tag)
+				if err != nil {
+					fnLog.Fatal("failed to execute data loder", err)
+				}
+			} else {
+				minis, err = generic.LoadData(loader.Name, loader.Repo, tag)
+				if err != nil {
+					fnLog.Fatal("failed to execute data loder", err)
+				}
 			}
 
 			for _, mini := range minis {

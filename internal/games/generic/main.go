@@ -1,4 +1,4 @@
-package soiaf
+package generic
 
 import (
 	"fmt"
@@ -10,18 +10,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	GameName = "A Song of Ice and Fire"
-	RepoName = "song-of-ice-and-fire"
-)
-
 // LoadData loads data for Warhammer AoS
-func LoadData(tag string) ([]games.Mini, error) {
-	logrus.Infof("Loading %s data", GameName)
+func LoadData(gameName, repoName, tag string) ([]games.Mini, error) {
+	logrus.Infof("Loading %s data", gameName)
 
 	var minis []games.Mini
 
-	cats, err := bsdata.GetData(RepoName, tag)
+	cats, err := bsdata.GetData(repoName, tag)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +31,7 @@ func LoadData(tag string) ([]games.Mini, error) {
 				minis = append(minis, games.Mini{
 					Name: fmt.Sprintf("%s - %s", cat.Name, e.Name),
 					Game: games.Game{
-						Name: GameName,
+						Name: gameName,
 					},
 				})
 			}

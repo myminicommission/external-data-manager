@@ -81,6 +81,8 @@ github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJ
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/myminicommission/go-bsdata v1.1.0 h1:UUvwjlpnk0/iuudtiE+dHezw1VLcqPgxAJxUoQPJO8Y=
 github.com/myminicommission/go-bsdata v1.1.0/go.mod h1:fAczAEdq8VtaN7EQ9OhLTufDd5Os7W10c7nqQgNJ8ZY=
+github.com/myminicommission/go-bsdata v1.1.1 h1:tH8GfpoFxaWX/6CgHuxbplk0nlYSgw7J9oCLUHkbajs=
+github.com/myminicommission/go-bsdata v1.1.1/go.mod h1:fAczAEdq8VtaN7EQ9OhLTufDd5Os7W10c7nqQgNJ8ZY=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
