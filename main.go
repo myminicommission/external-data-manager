@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"reflect"
@@ -74,6 +76,8 @@ func main() {
 		schedule = os.Args[2]
 	}
 
+	go startHttp()
+
 	/*
 	 * Setup shutdown handler
 	 */
@@ -107,6 +111,24 @@ func main() {
 	<-stopCtx.Done()
 
 	logrus.Info("application stopped")
+}
+
+func startHttp() {
+	// setup http listener for http status pings
+	http.HandleFunc("/status", handleStatus)
+	// listen on $PORT | 3002
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3002"
+	}
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleStatus(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintln(w, "OK")
 }
 
 func processMiniData() {
