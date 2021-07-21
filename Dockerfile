@@ -19,4 +19,5 @@ COPY --from=build /out/external-data-manager /
 
 STOPSIGNAL SIGINT
 
-ENTRYPOINT [ "/external-data-manager" ]
+ENTRYPOINT [ "/external-data-manager", "--" ]
+CMD ["@every 30m"]
