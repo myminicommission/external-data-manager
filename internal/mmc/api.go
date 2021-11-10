@@ -150,7 +150,11 @@ func (c *Client) GetMini(m games.Mini) (*games.Mini, error) {
 
 	err := c.gqlClient.Query(context.Background(), &query, variables)
 	if err != nil {
-		return mini, err
+		if err.Error() == "record not found" {
+			return mini, nil
+		} else {
+			return mini, err
+		}
 	}
 
 	if query.MiniWithName.ID != BlankUUID {

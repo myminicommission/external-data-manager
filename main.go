@@ -84,31 +84,36 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM)
 
-	c := cron.New()
-	// process the mini data on the provided schedule
-	cID, err := c.AddFunc(schedule, processMiniData)
-	if err != nil {
-		logrus.WithError(err).WithFields(logrus.Fields{
-			"cron ID":  cID,
+	if schedule != "once" {
+		c := cron.New()
+		// process the mini data on the provided schedule
+		cID, err := c.AddFunc(schedule, processMiniData)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"cron ID":  cID,
+				"schedule": schedule,
+			}).Fatal("error starting scheduler")
+		}
+
+		logrus.WithFields(logrus.Fields{
 			"schedule": schedule,
-		}).Fatal("error starting scheduler")
+			"cron ID":  cID,
+		}).Info("starting scheduler")
+
+		/*
+		* Start the CRON scheduler
+		 */
+		c.Start()
+		<-quit
+
+		logrus.Info("stopping scheduler")
+		stopCtx := c.Stop()
+
+		<-stopCtx.Done()
+	} else {
+		logrus.WithField("schedule", schedule).Info("running once")
+		processMiniData()
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"schedule": schedule,
-		"cron ID":  cID,
-	}).Info("starting scheduler")
-
-	/*
-	* Start the CRON scheduler
-	 */
-	c.Start()
-	<-quit
-
-	logrus.Info("stopping scheduler")
-	stopCtx := c.Stop()
-
-	<-stopCtx.Done()
 
 	logrus.Info("application stopped")
 }

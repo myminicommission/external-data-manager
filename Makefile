@@ -1,5 +1,5 @@
 start:
-	go run . -- "@every 1m"
+	go run . -- "once"
 
 start-docker: build-docker
 	@docker run mmc-external-datamanager:SNAPSHOT
